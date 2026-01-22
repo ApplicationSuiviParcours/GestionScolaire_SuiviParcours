@@ -13,21 +13,33 @@ class Classe extends Model
 {
     use HasFactory;
 
-
     protected $fillable = [
-        'nom_classe','niveau','filiere','effectif_max'
+        'nom_classe',
+        'niveau',
+        'filiere',
+        'effectif_max',
     ];
 
+    /**
+     * Relation vers les inscriptions de cette classe
+     */
     public function inscriptions(): HasMany
     {
-        return $this->hasMany(Inscription::class);
+        return $this->hasMany(Inscription::class, 'classe_id', 'id');
     }
 
+    /**
+     * Relation vers tous les élèves de cette classe via les inscriptions
+     */
     public function eleves(): HasManyThrough
     {
         return $this->hasManyThrough(
-            Eleve::class,
-            Inscription::class
+            Eleve::class,       // modèle final
+            Inscription::class, // modèle intermédiaire
+            'classe_id',        // clé étrangère dans inscriptions vers classes
+            'id',               // clé primaire dans eleves
+            'id',               // clé primaire dans classes
+            'eleve_id'          // clé étrangère dans inscriptions vers eleves
         );
     }
 }

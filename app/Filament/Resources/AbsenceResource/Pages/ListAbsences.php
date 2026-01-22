@@ -16,4 +16,13 @@ class ListAbsences extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
+
+     protected function getCreatedNotification(): ?Notification
+    {
+        return Notification::make()
+            ->success()
+            ->title('Absence modifier')
+            ->body('Absence a été modifier avec succès');
+    }
+    
 }

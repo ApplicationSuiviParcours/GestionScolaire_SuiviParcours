@@ -17,20 +17,34 @@ class MatiereResource extends Resource
 {
     protected static ?string $model = Matiere::class;
 
-    protected static ?string $navigationGroup = 'Pédagogie';
+    protected static ?string $navigationGroup = 'Scolarité';
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-book-open';
+
+    protected static ?string $navigationLabel = 'Matiéres';
+
+    protected static ?int $navigationSort = 6;
+
+    // 🔐 SÉCURITÉ
+    public static function canViewAny(): bool
+    {
+        return auth()->user()->hasRole(['super_admin', 'Administrateur']);
+    }
+
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('libelle')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('coefficient')
-                    ->required()
-                    ->numeric(),
+                Forms\Components\Section::make('Création de la matière')
+                    ->schema([
+                        Forms\Components\TextInput::make('libelle')
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('coefficient')
+                            ->required()
+                            ->numeric(),
+                    ])->columns(2)
             ]);
     }
 
@@ -56,7 +70,10 @@ class MatiereResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->requiresConfirmation(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -65,6 +82,7 @@ class MatiereResource extends Resource
             ]);
     }
 
+    
     public static function getRelations(): array
     {
         return [

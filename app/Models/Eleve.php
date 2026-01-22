@@ -15,31 +15,54 @@ class Eleve extends Model
 {
     use HasFactory;
 
-     protected $fillable = [
-        'matricule','nom','prenom','genre','date_naissance',
-        'lieu_naissance','adresse','telephone','email','photo','statut'
+    protected $fillable = [
+        'matricule',
+        'nom',
+        'prenom',
+        'genre',
+        'date_naissance',
+        'lieu_naissance',
+        'adresse',
+        'telephone',
+        'email',
+        'photo',
+        'statut',
     ];
 
+    /**
+     * Toutes les inscriptions de cet élève
+     */
     public function inscriptions(): HasMany
     {
-        return $this->hasMany(Inscription::class);
+        return $this->hasMany(Inscription::class, 'eleve_id', 'id');
     }
 
+    /**
+     * Tous les parents liés à cet élève
+     */
     public function parents(): BelongsToMany
     {
         return $this->belongsToMany(
             ParentEleve::class,
-            'eleve_parent'
+            'eleve_parent', // table pivot
+            'eleve_id',     // clé étrangère dans pivot pour Eleve
+            'parent_id'     // clé étrangère dans pivot pour Parent
         )->withPivot('lien')->withTimestamps();
     }
 
-    public function notes()
+    /**
+     * Toutes les notes de cet élève
+     */
+    public function notes(): HasMany
     {
-        return $this->hasMany(Note::class);
+        return $this->hasMany(Note::class, 'eleve_id', 'id');
     }
 
-    public function absences()
+    /**
+     * Toutes les absences de cet élève
+     */
+    public function absences(): HasMany
     {
-        return $this->hasMany(Absence::class);
+        return $this->hasMany(Absence::class, 'eleve_id', 'id');
     }
 }

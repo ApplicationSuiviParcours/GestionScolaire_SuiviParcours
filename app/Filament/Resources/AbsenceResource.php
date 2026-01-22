@@ -12,36 +12,66 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Forms\Components\RichEditor;
 
 class AbsenceResource extends Resource
 {
     protected static ?string $model = Absence::class;
 
-    protected static ?string $navigationGroup = 'Discipline';
+    protected static ?string $navigationGroup = 'Scolarité';
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
+
+    protected static ?int $navigationSort = 10;
+
+    
+    // 🔐 SÉCURITÉ
+    public static function canViewAny(): bool
+    {
+        return auth()->user()->hasRole(['Administrateur', 'Enseignant', 'Scolarite']);
+    }
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('eleve_id')
-                    ->relationship('eleve', 'nom')
-                    ->required(),
-                Forms\Components\DatePicker::make('date_absence')
-                    ->required(),
-                Forms\Components\Textarea::make('motif')
-                    ->required(),
-                Forms\Components\Toggle::make('justifie')
-                    ->required(),
-            ]);
+                Forms\Components\Section::make('Informations sur l\'absence')
+    ->schema([
+        Forms\Components\Select::make('eleve_id')
+            ->relationship('eleve', 'nom')
+            ->label('Élève')
+            ->required()
+            ->searchable(),
+
+        Forms\Components\DatePicker::make('date_absence')
+            ->required(),
+
+        Forms\Components\RichEditor::make('motif')
+            ->placeholder('Exemple : Maladie, Rendez-vous médical, Retard…')
+            ->required()
+            ->columnSpan('full')
+            ->toolbarButtons([
+                'bold',        
+                'italic',      
+                'underline',   
+                'bulletList',  
+                'numberList',  
+                'link',        
+                'redo',        
+                'undo',        
+            ]),
+
+        Forms\Components\Toggle::make('justifie')
+            ->required(),
+    ])
+            ])->columns(3);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('eleve.id')
+                Tables\Columns\TextColumn::make('eleve.nom')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('date_absence')
@@ -64,7 +94,10 @@ class AbsenceResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->requiresConfirmation(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -72,6 +105,7 @@ class AbsenceResource extends Resource
                 ]),
             ]);
     }
+
 
     public static function getRelations(): array
     {

@@ -17,22 +17,35 @@ class NoteResource extends Resource
 {
     protected static ?string $model = Note::class;
 
-    protected static ?string $navigationGroup = 'Évaluations';
+    protected static ?string $navigationGroup = 'Scolarité';
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
+
+    protected static ?string $navigationLabel = 'Notes';
+
+    protected static ?int $navigationSort = 9;
+
+    // 🔐 SÉCURITÉ
+    public static function canViewAny(): bool
+    {
+        return auth()->user()->hasRole(['Administrateur', 'Enseignant', 'Scolarite']);
+    }
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('evaluation_id')
-                    ->relationship('evaluation','id')
-                    ->required(),
-                Forms\Components\Select::make('eleve_id')
-                    ->relationship('eleve','nom')->required(),
-                Forms\Components\TextInput::make('valeur')
-                    ->numeric()
-                    ->required(),
+                Forms\Components\Section::make('Saisir la note de l\'élève')
+                    ->schema([
+                        Forms\Components\Select::make('evaluation_id')
+                            ->relationship('evaluation','id')
+                            ->required(),
+                        Forms\Components\Select::make('eleve_id')
+                            ->relationship('eleve','nom')->required(),
+                        Forms\Components\TextInput::make('valeur')
+                            ->numeric()
+                            ->required(),
+                    ])->columns(3)
             ]);
     }
 
@@ -47,8 +60,11 @@ class NoteResource extends Resource
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('valeur')
-                    ->numeric()
-                    ->sortable(),
+                    ->badge()
+                    ->color(fn ($state) =>
+                        $state < 10 ? 'danger' :
+                        ($state < 14 ? 'warning' : 'success')
+                    ),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -62,7 +78,10 @@ class NoteResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->requiresConfirmation(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -70,6 +89,8 @@ class NoteResource extends Resource
                 ]),
             ]);
     }
+
+    
 
     public static function getRelations(): array
     {

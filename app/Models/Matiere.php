@@ -13,11 +13,16 @@ class Matiere extends Model
 
     protected $fillable = ['libelle','coefficient'];
 
+    /**
+     * Relation vers toutes les classes qui utilisent cette matière
+     */
     public function classes(): BelongsToMany
     {
         return $this->belongsToMany(
-            Classe::class,
-            'enseignant_matiere_classe'
-        );
+            Classe::class,               // modèle lié
+            'enseignant_matiere_classe', // table pivot
+            'matiere_id',                // clé étrangère de Matiere dans pivot
+            'classe_id'                  // clé étrangère de Classe dans pivot
+        )->withTimestamps();            // si pivot a created_at et updated_at
     }
 }

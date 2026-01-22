@@ -12,32 +12,44 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Tables\Filters\SelectFilter;
 
 class InscriptionResource extends Resource
 {
     protected static ?string $model = Inscription::class;
     protected static ?string $navigationGroup = 'Scolarité';
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
+    protected static ?string $navigationLabel = 'Inscriptions';
+    protected static ?int $navigationSort = 7;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    // 🔐 SÉCURITÉ
+    public static function canViewAny(): bool
+    {
+        return auth()->user()->hasRole(['Administrateur', 'Scolarite']);
+    }
+
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('eleve_id')
-                    ->relationship('eleve', 'nom')
-                    ->searchable()
-                    ->required(),
-                Forms\Components\Select::make('classe_id')
-                    ->relationship('classe', 'nom_classe')
-                    ->required(),
-                Forms\Components\Select::make('annee_id')
-                    ->relationship('annee', 'libelle')
-                    ->required(),
-                Forms\Components\DatePicker::make('date_inscription')
-                    ->required(),
-                Forms\Components\TextInput::make('statut')
-                    ->required(),
+                Forms\Components\Section::make('Inscription')
+                    ->schema([
+                        Forms\Components\Select::make('eleve_id')
+                            ->relationship('eleve', 'nom')
+                            ->searchable()
+                            ->required(),
+                        Forms\Components\Select::make('classe_id')
+                            ->relationship('classe', 'nom_classe')
+                            ->required(),
+                        Forms\Components\Select::make('annee_id')
+                            ->relationship('annee', 'libelle')
+                            ->required(),
+                        Forms\Components\DatePicker::make('date_inscription')
+                            ->required(),
+                        Forms\Components\TextInput::make('statut')
+                            ->required(),
+                    ])->columns(2)
             ]);
     }
 
@@ -68,11 +80,15 @@ class InscriptionResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([
-                //
+             ->filters([
+                SelectFilter::make('classe_id')->relationship('classe','nom_classe'),
+                SelectFilter::make('annee_id')->relationship('annee','libelle'),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->requiresConfirmation(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -81,6 +97,7 @@ class InscriptionResource extends Resource
             ]);
     }
 
+    
     public static function getRelations(): array
     {
         return [

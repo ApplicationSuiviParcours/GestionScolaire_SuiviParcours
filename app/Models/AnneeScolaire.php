@@ -14,11 +14,18 @@ class AnneeScolaire extends Model
     protected $table = 'annees_scolaires';
 
     protected $fillable = [
-        'libelle','date_debut','date_fin','actif'
+        'libelle',
+        'date_debut',
+        'date_fin',
+        'actif',
     ];
 
+    /**
+     * Relation vers toutes les inscriptions de cette année scolaire
+     */
     public function inscriptions(): HasMany
     {
-        return $this->hasMany(Inscription::class, 'annee_id');
+        return $this->hasMany(Inscription::class, 'annee_id', 'id');
     }
 }
+

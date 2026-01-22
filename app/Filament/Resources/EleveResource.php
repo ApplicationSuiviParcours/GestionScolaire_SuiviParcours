@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Tables\Filters\SelectFilter;
 
 class EleveResource extends Resource
 {
@@ -19,42 +20,78 @@ class EleveResource extends Resource
 
     protected static ?string $navigationGroup = 'Scolarité';
 
-    protected static ?string $navigationLabel = 'Élèves';
+    protected static ?string $navigationLabel = 'Elèves';
+    protected static ?string $navigationIcon = 'heroicon-o-user-group';
+    protected static ?int $navigationSort = 3;
+    protected static ?string $recordTitleAttribute = 'nom';
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+     // 🔐 SÉCURITÉ
+    public static function canViewAny(): bool
+    {
+        return auth()->user()->hasRole(['Administrateur', 'Scolarite']);
+    }
+
+    
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('matricule')
-                    ->required()
-                    ->unique(ignoreRecord: true),
-                Forms\Components\TextInput::make('nom')
-                    ->required(),
-                Forms\Components\TextInput::make('prenom')
-                    ->required(),
-                Forms\Components\Select::make('genre')
-                    ->options(['M'=>'Masculin','F'=>'Féminin'])
-                    ->required(),
-                Forms\Components\DatePicker::make('date_naissance')
-                    ->required(),
-                Forms\Components\TextInput::make('lieu_naissance')
-                    ->required(),
-                Forms\Components\TextInput::make('adresse')
-                    ->required(),
-                Forms\Components\TextInput::make('telephone')
-                    ->tel()
-                    ->required(),
-                Forms\Components\TextInput::make('email')
-                    ->email()
-                    ->required(),
-                Forms\Components\FileUpload::make('photo')
-                    ->image()
-                    ->directory('eleves'),
-                Forms\Components\Select::make('statut')
-                    ->options(['actif'=>'Actif','inactif'=>'Inactif'])
-                    ->default('actif'),
+                Forms\Components\Section::make('Informations générales')
+                    ->schema([
+                        Forms\Components\TextInput::make('matricule')
+                            ->label('Matricule')
+                            ->required()
+                            ->unique(ignoreRecord: true),
+                        Forms\Components\TextInput::make('nom')
+                            ->label('Nom')
+                            ->required(),
+                        Forms\Components\TextInput::make('prenom')
+                            ->label('Prénom')
+                            ->required(),
+                        Forms\Components\Select::make('genre')
+                            ->label('Genre')
+                            ->options(['M'=>'Masculin','F'=>'Féminin'])
+                            ->required(),
+                        Forms\Components\DatePicker::make('date_naissance')
+                            ->label('Date de naissance')
+                            ->required()
+                            ->displayFormat('d/m/Y'),
+                        Forms\Components\TextInput::make('lieu_naissance')
+                            ->label('Lieu de naissance')
+                            ->required(),
+                    ])->columns(2),
+
+                Forms\Components\Section::make('Coordonnées')
+                    ->schema([
+                        Forms\Components\TextInput::make('adresse')
+                            ->label('Adresse')
+                            ->required(),
+                        Forms\Components\TextInput::make('telephone')
+                            ->label('Téléphone')
+                            ->tel()
+                            ->required(),
+                        Forms\Components\TextInput::make('email')
+                            ->label('Email')
+                            ->email()
+                            ->required(),
+                    ])->columns(3),
+
+                Forms\Components\Section::make('Photo de l\'élève')
+                    ->schema([
+                        Forms\Components\FileUpload::make('photo')
+                            ->label('Photo')
+                            ->image()
+                            ->directory('eleves'),
+                    ])->columns(1),
+
+                Forms\Components\Section::make('Statut')
+                    ->schema([
+                        Forms\Components\Select::make('statut')
+                            ->label('Statut')
+                            ->options(['actif'=>'Actif','inactif'=>'Inactif'])
+                            ->default('actif'),
+                    ])
             ]);
     }
 
@@ -68,7 +105,9 @@ class EleveResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('prenom')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('genre'),
+                Tables\Columns\TextColumn::make('genre')
+                    ->badge()
+                    ->color(fn ($state) => $state === 'M' ? 'info' : 'success'),
                 Tables\Columns\TextColumn::make('date_naissance')
                     ->date()
                     ->sortable(),
@@ -93,12 +132,14 @@ class EleveResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                SelectFilter::make('genre')
+                    ->options(['M'=>'Masculin','F'=>'Féminin']),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->requiresConfirmation(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -107,6 +148,7 @@ class EleveResource extends Resource
             ]);
     }
 
+   
     public static function getRelations(): array
     {
         return [

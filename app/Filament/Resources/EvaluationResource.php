@@ -12,38 +12,65 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Tables\Filters\SelectFilter;
 
 class EvaluationResource extends Resource
 {
     protected static ?string $model = Evaluation::class;
 
-    protected static ?string $navigationGroup = 'Évaluations';
+    protected static ?string $navigationGroup = 'Scolarité';
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
+
+    protected static ?string $navigationLabel = 'Evaluations';
+
+    protected static ?int $navigationSort = 8;
+
+     // 🔐 SÉCURITÉ
+    public static function canViewAny(): bool
+    {
+        return auth()->user()->hasRole(['Administrateur', 'Enseignant', 'Scolarite']);
+    }
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('type_evaluation')
-                    ->options(['devoir'=>'Devoir','examen'=>'Examen'])
-                    ->required(),
-                Forms\Components\DatePicker::make('date_evaluation')
-                    ->required(),
-                Forms\Components\Select::make('classe_id')
-                    ->relationship('classe','nom_classe'),
-                Forms\Components\Select::make('matiere_id')
-                    ->relationship('matiere','libelle'),
-                Forms\Components\Select::make('annee_id')
-                    ->relationship('annee','libelle'),
-            ]);
+                    Forms\Components\Section::make('Informations sur l\'évaluation')
+                        ->schema([
+                            Forms\Components\Select::make('type_evaluation')
+                                ->options(['devoir'=>'Devoir','examen'=>'Examen'])
+                                ->required(),
+
+                            Forms\Components\DatePicker::make('date_evaluation')
+                                ->required(),
+
+                            Forms\Components\Select::make('classe_id')
+                                ->relationship('classe','nom_classe')
+                                ->required(),
+
+                            Forms\Components\Select::make('matiere_id')
+                                ->relationship('matiere','libelle')
+                                ->required(),
+
+                            Forms\Components\Select::make('annee_id')
+                                ->relationship('annee','libelle')
+                                ->required(),
+                        ])->columns(2) 
+                ]);
+
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('type_evaluation'),
+                Tables\Columns\TextColumn::make('type_evaluation')
+                    ->badge()
+                    ->color(fn ($state) =>
+                        $state === 'examen' ? 'danger' :
+                        ($state === 'devoir' ? 'warning' : 'info')
+                    ),
                 Tables\Columns\TextColumn::make('date_evaluation')
                     ->date()
                     ->sortable(),
@@ -66,10 +93,19 @@ class EvaluationResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                SelectFilter::make('type')
+                    ->options([
+                        'devoir'=>'Devoir',
+                        'interrogation'=>'Interrogation',
+                        'examen'=>'Examen',
+            ])
+                
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->requiresConfirmation(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -77,6 +113,8 @@ class EvaluationResource extends Resource
                 ]),
             ]);
     }
+
+   
 
     public static function getRelations(): array
     {

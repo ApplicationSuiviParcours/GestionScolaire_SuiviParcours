@@ -14,21 +14,36 @@ class Inscription extends Model
     use HasFactory;
 
     protected $fillable = [
-        'eleve_id','classe_id','annee_id','date_inscription','statut'
+        'eleve_id',
+        'classe_id',
+        'annee_id',
+        'date_inscription',
+        'statut',
     ];
 
+    protected $dates = ['date_inscription'];
+
+    /**
+     * Relation vers l'élève inscrit
+     */
     public function eleve(): BelongsTo
     {
-        return $this->belongsTo(Eleve::class);
+        return $this->belongsTo(Eleve::class, 'eleve_id', 'id');
     }
 
+    /**
+     * Relation vers la classe de l'inscription
+     */
     public function classe(): BelongsTo
     {
-        return $this->belongsTo(Classe::class);
+        return $this->belongsTo(Classe::class, 'classe_id', 'id');
     }
 
+    /**
+     * Relation vers l'année scolaire de l'inscription
+     */
     public function annee(): BelongsTo
     {
-        return $this->belongsTo(AnneeScolaire::class, 'annee_id');
+        return $this->belongsTo(AnneeScolaire::class, 'annee_id', 'id');
     }
 }

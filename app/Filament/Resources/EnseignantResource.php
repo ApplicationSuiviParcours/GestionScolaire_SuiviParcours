@@ -17,26 +17,39 @@ class EnseignantResource extends Resource
 {
     protected static ?string $model = Enseignant::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    protected static ?string $navigationGroup = 'Scolarité';
+    protected static ?string $navigationLabel = 'Enseignants';
+    protected static ?int $navigationSort = 5;
 
-    protected static ?string $navigationGroup = 'Pédagogie';
+    
+    // 🔐 SÉCURITÉ
+    public static function canViewAny(): bool
+    {
+        return auth()->user()->hasRole(['Administrateur', 'Scolarite']);
+    }
+
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('nom')
-                    ->required(),
-                Forms\Components\TextInput::make('prenom')
-                    ->required(),
-                Forms\Components\TextInput::make('specialite')
-                    ->required(),
-                Forms\Components\TextInput::make('telephone')
-                    ->tel()
-                    ->required(),
-                Forms\Components\TextInput::make('email')
-                    ->email()
-                    ->required(),
+                Forms\Components\Section::make('Informations Personnelles')
+                ->schema([
+                    Forms\Components\TextInput::make('nom')
+                        ->required(),
+                    Forms\Components\TextInput::make('prenom')
+                        ->required(),
+                    Forms\Components\TextInput::make('specialite')
+                        ->required(),
+                    Forms\Components\TextInput::make('telephone')
+                        ->tel()
+                        ->required(),
+                    Forms\Components\TextInput::make('email')
+                        ->email()
+                        ->required()
+                        ->columnSpan('full'),
+                ])->columns(2)
             ]);
     }
 
@@ -67,7 +80,10 @@ class EnseignantResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->requiresConfirmation(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
